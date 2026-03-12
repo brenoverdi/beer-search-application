@@ -14,26 +14,12 @@ const ListDetail = () => import('../views/ListDetail.vue')
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/search', name: 'Search', component: Search },
-  { path: '/login', name: 'Login', component: Login },
-  { path: '/register', name: 'Register', component: Register },
-  { path: '/verify-email', name: 'VerifyEmail', component: VerifyEmail },
-  {
-    path: '/favorites',
-    name: 'Favorites',
-    component: Favorites,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/lists',
-    name: 'Lists',
-    component: Lists,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/lists/:listId',
-    name: 'ListDetail',
-    component: ListDetail,
-  },
+  { path: '/login', name: 'Login', component: Login, meta: { public: true } },
+  { path: '/register', name: 'Register', component: Register, meta: { public: true } },
+  { path: '/verify-email', name: 'VerifyEmail', component: VerifyEmail, meta: { public: true } },
+  { path: '/favorites', name: 'Favorites', component: Favorites },
+  { path: '/lists', name: 'Lists', component: Lists },
+  { path: '/lists/:listId', name: 'ListDetail', component: ListDetail },
 ]
 
 const router = createRouter({
@@ -42,13 +28,17 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-// Navigation guard
+// Global navigation guard
 router.beforeEach((to) => {
-  if (to.meta.requiresAuth) {
-    const auth = useAuthStore()
-    if (!auth.isLoggedIn) {
-      return { name: 'Login', query: { redirect: to.fullPath } }
-    }
+  const auth = useAuthStore()
+  if (to.meta.public) {
+    // Already logged in — skip past login/register to home
+    if (auth.isLoggedIn) return { name: 'Home' }
+    return
+  }
+  // All other routes require auth
+  if (!auth.isLoggedIn) {
+    return { name: 'Login', query: { redirect: to.fullPath } }
   }
 })
 

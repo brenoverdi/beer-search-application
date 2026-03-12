@@ -4,7 +4,7 @@
     <section class="hero-gradient py-20">
       <div class="max-w-4xl mx-auto text-center px-4">
         <h1 class="text-5xl font-bold text-white mb-6">
-          í½º Discover Your Perfect Beer
+          ğŸº Discover Your Perfect Beer
         </h1>
         <p class="text-xl text-gray-200 mb-8">
           Search thousands of craft beers and discover your new favorites
@@ -35,10 +35,10 @@
     <!-- Popular Beers Section -->
     <section class="py-16">
       <div class="max-w-6xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">í´¥ Popular Beers</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">ğŸ”¥ Popular Beers</h2>
         
         <div v-if="beerStore.loading" class="text-center">
-          <div class="text-2xl">í½º Loading beers...</div>
+          <div class="text-2xl">â³ Loading beers...</div>
         </div>
         
         <div v-else-if="beerStore.error" class="text-center text-red-600">

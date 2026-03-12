@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen flex flex-col bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+    <!-- Navigation — hidden on auth pages -->
+    <nav v-if="!route.meta.public" class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div class="max-w-6xl mx-auto px-4">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
@@ -76,8 +76,8 @@
       <router-view />
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 mt-auto">
+    <!-- Footer — hidden on auth pages -->
+    <footer v-if="!route.meta.public" class="bg-gray-800 text-white py-8 mt-auto">
       <div class="max-w-6xl mx-auto px-4 text-center">
         <p class="text-gray-300">&copy; 2024 Beer Search. Discover your perfect beer! 🍺</p>
         <p class="text-gray-500 text-sm mt-1">Powered by Gemini AI — Drink responsibly</p>
@@ -88,10 +88,11 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const mobileOpen = ref(false)
 
