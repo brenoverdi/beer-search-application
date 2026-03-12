@@ -37,7 +37,7 @@ export const useBeerStore = defineStore('beer', {
       try {
         const response = await apiService.searchBeers(query, page, this.pagination.limit)
         
-        this.searchResults = response.beers || response.data || []
+        this.searchResults = response.results || response.beers || response.data || []
         this.pagination.page = page
         this.pagination.total = response.total || 0
         
@@ -72,7 +72,7 @@ export const useBeerStore = defineStore('beer', {
       
       try {
         const response = await apiService.getPopularBeers(20)
-        this.popularBeers = response.beers || response.data || []
+        this.popularBeers = response.results || response.beers || response.data || []
       } catch (error) {
         this.error = error.message
         this.popularBeers = []
