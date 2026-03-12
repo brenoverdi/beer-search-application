@@ -81,7 +81,7 @@
               <div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
                 <div v-if="beer.rating_score" class="flex items-center gap-1.5">
                   <span class="text-amber-400 text-sm">★</span>
-                  <span class="font-semibold text-gray-800 text-sm">{{ Number(beer.rating_score).toFixed(2) }}</span>
+                  <span class="font-semibold text-sm" :class="ratingClass(beer.rating_score)">{{ Number(beer.rating_score).toFixed(2) }}</span>
                   <span v-if="beer.rating_count" class="text-gray-400 text-xs">({{ Number(beer.rating_count).toLocaleString() }})</span>
                 </div>
                 <div v-else class="text-xs text-gray-400">No rating</div>
@@ -155,6 +155,12 @@ export default {
       console.log('View beer details:', beer)
     }
     
+    const ratingClass = (score) => {
+      if (score >= 4.0) return 'text-green-600'
+      if (score >= 3.5) return 'text-amber-500'
+      return 'text-red-500'
+    }
+    
     onMounted(() => {
       loadPopularBeers()
     })
@@ -167,7 +173,8 @@ export default {
       handleSearch,
       loadPopularBeers,
       toggleFavorite,
-      viewBeerDetails
+      viewBeerDetails,
+      ratingClass
     }
   }
 }

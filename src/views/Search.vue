@@ -216,7 +216,7 @@ const run = async () => {
 }
 
 const ratingClass = (score) => {
-  if (score >= 4.5) return 'text-green-600'
+  if (score >= 4.0) return 'text-green-600'
   if (score >= 3.5) return 'text-amber-500'
   return 'text-red-500'
 }
