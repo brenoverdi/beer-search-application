@@ -71,6 +71,18 @@
         </button>
       </div>
 
+      <!-- URL input -->
+      <div v-else-if="mode === 'url'" class="mb-6">
+        <input
+          v-model="urlInput"
+          @keyup.enter="run"
+          type="url"
+          placeholder="Paste a bar menu or tap list URL, e.g. https://example.com/taplist"
+          class="input-field w-full"
+        />
+        <p class="text-xs text-gray-400 mt-2">The AI will visit the page and extract all beer names it finds.</p>
+      </div>
+
       <!-- Action row -->
       <div class="flex gap-3 mb-8">
         <button
@@ -200,7 +212,7 @@
       <!-- Empty state -->
       <div v-else-if="!loading && !error" class="text-center py-16 text-gray-400">
         <div class="text-5xl mb-3">🍺</div>
-        <p>Enter a beer name, paste a list, or upload an image to get started.</p>
+        <p>Enter a beer name, paste a list, upload an image, or paste a URL to get started.</p>
       </div>
         
     </div>
@@ -220,11 +232,13 @@ const modes = [
   { id: 'single', label: '🍺 Single Beer' },
   { id: 'list',   label: '📋 List' },
   { id: 'image',  label: '📷 Image' },
+  { id: 'url',    label: '🔗 URL' },
 ]
 
 const mode       = ref('single')
 const singleName = ref('')
 const listText   = ref('')
+const urlInput   = ref('')
 const imageFile  = ref(null)
 const imagePreview = ref(null)
 const fileInput  = ref(null)
@@ -239,6 +253,7 @@ const canRun = computed(() => {
   if (mode.value === 'single') return singleName.value.trim().length > 0
   if (mode.value === 'list')   return listText.value.trim().length > 0
   if (mode.value === 'image')  return imageFile.value !== null
+  if (mode.value === 'url')    return urlInput.value.trim().length > 0
   return false
 })
 
@@ -249,15 +264,20 @@ const run = async () => {
   results.value = []
   source.value  = null
   try {
-    let payload = {}
-    if (mode.value === 'single') {
-      payload.beers = singleName.value.trim()
-    } else if (mode.value === 'list') {
-      payload.beers = listText.value.trim()
+    let data
+    if (mode.value === 'url') {
+      data = await apiService.searchFromUrl(urlInput.value.trim())
     } else {
-      payload.image = imageFile.value
+      let payload = {}
+      if (mode.value === 'single') {
+        payload.beers = singleName.value.trim()
+      } else if (mode.value === 'list') {
+        payload.beers = listText.value.trim()
+      } else {
+        payload.image = imageFile.value
+      }
+      data = await apiService.search(payload)
     }
-    const data = await apiService.search(payload)
     results.value = data.results || []
     source.value  = data.source || null
   } catch (err) {

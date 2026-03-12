@@ -150,6 +150,13 @@ class ApiService {
     return response.json()
   }
 
+  async searchFromUrl(url) {
+    return this.request('/beers/search-from-url', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    })
+  }
+
   // ── Favorites ─────────────────────────────────────────────────────────────
 
   async getFavorites(userId) {
