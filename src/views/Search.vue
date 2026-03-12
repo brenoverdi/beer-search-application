@@ -110,6 +110,7 @@
                 <th class="px-5 py-3 text-left font-medium">Beer Name</th>
                 <th class="px-5 py-3 text-left font-medium">Brewery</th>
                 <th class="px-5 py-3 text-left font-medium">Style</th>
+                <th class="px-5 py-3 text-right font-medium">ABV</th>
                 <th class="px-5 py-3 text-right font-medium">Avg Rating</th>
                 <th class="px-5 py-3 text-right font-medium">Check-ins</th>
               </tr>
@@ -121,9 +122,16 @@
                 class="hover:bg-amber-50 transition-colors"
               >
                 <td class="px-5 py-3 text-gray-400">{{ idx + 1 }}</td>
-                <td class="px-5 py-3 font-medium text-gray-900">{{ r.beer_name }}</td>
+                <td class="px-5 py-3">
+                  <div class="font-medium text-gray-900">{{ r.beer_name }}</div>
+                  <div v-if="r.description" class="text-xs text-gray-400 mt-0.5 max-w-xs line-clamp-2">{{ r.description }}</div>
+                </td>
                 <td class="px-5 py-3 text-gray-600">{{ r.brewery }}</td>
                 <td class="px-5 py-3 text-gray-500">{{ r.style }}</td>
+                <td class="px-5 py-3 text-right text-gray-600 text-sm">
+                  <span v-if="r.abv !== null && r.abv !== undefined">{{ Number(r.abv).toFixed(1) }}%</span>
+                  <span v-else class="text-gray-300">—</span>
+                </td>
                 <td class="px-5 py-3 text-right">
                   <span
                     v-if="r.rating_score !== null"

@@ -48,34 +48,48 @@
           </button>
         </div>
         
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <div
             v-for="beer in displayBeers"
-            :key="beer.id"
-            class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            :key="beer.query || beer.id"
+            class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer flex flex-col"
             @click="viewBeerDetails(beer)"
           >
-            <img
-              :src="beer.label_url || beer.image || '/placeholder-beer.png'"
-              :alt="beer.beer_name || beer.name"
-              class="w-full h-48 object-cover"
-            />
-            <div class="p-4">
-              <h3 class="font-semibold text-gray-900 mb-1">
+            <!-- Card header band -->
+            <div class="bg-amber-50 border-b border-amber-100 px-5 py-4 rounded-t-xl flex items-center justify-between">
+              <span class="text-3xl">🍺</span>
+              <span v-if="beer.abv" class="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                {{ Number(beer.abv).toFixed(1) }}% ABV
+              </span>
+            </div>
+            <!-- Card body -->
+            <div class="p-5 flex flex-col flex-1">
+              <h3 class="font-bold text-gray-900 text-base leading-tight mb-1">
                 {{ beer.beer_name || beer.name }}
               </h3>
-              <p class="text-gray-600 text-sm mb-2">
+              <p class="text-amber-700 text-sm font-medium mb-0.5">
                 {{ beer.brewery?.brewery_name || beer.brewery || 'Unknown Brewery' }}
               </p>
-              <div class="flex items-center justify-between">
-                <span class="text-xs text-gray-500">
-                  {{ beer.beer_style || beer.style || 'Unknown Style' }}
-                </span>
+              <p class="text-gray-400 text-xs mb-3">
+                {{ beer.beer_style || beer.style || 'Unknown Style' }}
+              </p>
+              <p v-if="beer.description" class="text-gray-600 text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
+                {{ beer.description }}
+              </p>
+              <div v-else class="flex-1"></div>
+              <!-- Footer: rating + favourite -->
+              <div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                <div v-if="beer.rating_score" class="flex items-center gap-1.5">
+                  <span class="text-amber-400 text-sm">★</span>
+                  <span class="font-semibold text-gray-800 text-sm">{{ Number(beer.rating_score).toFixed(2) }}</span>
+                  <span v-if="beer.rating_count" class="text-gray-400 text-xs">({{ Number(beer.rating_count).toLocaleString() }})</span>
+                </div>
+                <div v-else class="text-xs text-gray-400">No rating</div>
                 <button
                   @click.stop="toggleFavorite(beer)"
-                  class="text-red-500 hover:text-red-700"
+                  class="text-red-400 hover:text-red-600 transition-colors text-lg leading-none"
                 >
-                  {{ beerStore.isFavorite(beer.bid || beer.id) ? '♥' : '♡' }}
+                  {{ beerStore.isFavorite(beer.query || beer.bid || beer.id) ? '♥' : '♡' }}
                 </button>
               </div>
             </div>
