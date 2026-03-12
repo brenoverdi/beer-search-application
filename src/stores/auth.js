@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isLoggedIn: (state) => !!state.user && !!localStorage.getItem('access_token'),
+    isAuthenticated: (state) => !!state.user && !!localStorage.getItem('access_token'),
     currentUser: (state) => state.user,
     needsVerification: (state) => !!state.pendingVerificationEmail,
   },
