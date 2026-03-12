@@ -113,6 +113,7 @@
                 <th class="px-5 py-3 text-right font-medium">ABV</th>
                 <th class="px-5 py-3 text-right font-medium">Avg Rating</th>
                 <th class="px-5 py-3 text-right font-medium">Check-ins</th>
+                <th class="px-5 py-3 text-center font-medium">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
@@ -145,6 +146,51 @@
                 <td class="px-5 py-3 text-right text-gray-600">
                   {{ r.rating_count !== null ? r.rating_count.toLocaleString() : '—' }}
                 </td>
+                <td class="px-5 py-3">
+                  <div class="flex items-center justify-center gap-2">
+                    <!-- Favorite button -->
+                    <button
+                      v-if="authStore.isAuthenticated"
+                      @click="toggleFavorite(r)"
+                      :class="isFavorite(r) ? 'text-red-500' : 'text-gray-400'"
+                      class="hover:text-red-600 transition-colors text-lg"
+                      :title="isFavorite(r) ? 'Remove from favorites' : 'Add to favorites'"
+                    >
+                      {{ isFavorite(r) ? '♥' : '♡' }}
+                    </button>
+                    <!-- Add to list dropdown -->
+                    <div v-if="authStore.isAuthenticated" class="relative">
+                      <button
+                        @click="toggleListDropdown(idx)"
+                        class="text-gray-600 hover:text-amber-600 transition-colors px-2 py-1 rounded text-xs border border-gray-300 hover:border-amber-400"
+                        title="Add to list"
+                      >
+                        + List
+                      </button>
+                      <div
+                        v-if="activeDropdown === idx"
+                        @click.stop
+                        class="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto"
+                      >
+                        <div v-if="listsStore.lists.length === 0" class="px-4 py-3 text-xs text-gray-500 text-center">
+                          No lists yet. Create one in Lists page.
+                        </div>
+                        <button
+                          v-for="list in listsStore.lists"
+                          :key="list.id"
+                          @click="addBeerToList(r, list.id)"
+                          class="w-full text-left px-4 py-2 text-sm hover:bg-amber-50 transition-colors border-b border-gray-100 last:border-0"
+                        >
+                          {{ list.name }}
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Not authenticated notice -->
+                    <span v-if="!authStore.isAuthenticated" class="text-xs text-gray-400">
+                      Login to save
+                    </span>
+                  </div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -162,8 +208,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useListsStore } from '@/stores/lists'
 import apiService from '@/services/api'
+
+const authStore = useAuthStore()
+const listsStore = useListsStore()
 
 const modes = [
   { id: 'single', label: '🍺 Single Beer' },
@@ -182,6 +233,7 @@ const loading = ref(false)
 const error   = ref(null)
 const results = ref([])
 const source  = ref(null)
+const activeDropdown = ref(null)
 
 const canRun = computed(() => {
   if (mode.value === 'single') return singleName.value.trim().length > 0
@@ -241,6 +293,63 @@ const clearImage = () => {
   if (fileInput.value) fileInput.value.value = ''
 }
 
+// Favorites management
+const isFavorite = (beer) => {
+  const beerId = beer.bid || beer.id || beer.query
+  return listsStore.isFavorite(beerId)
+}
+
+const toggleFavorite = async (beer) => {
+  if (!authStore.isAuthenticated) return
+  
+  try {
+    const beerId = beer.bid || beer.id || beer.query
+    await listsStore.toggleFavorite(authStore.currentUser.id, beerId)
+  } catch (err) {
+    console.error('Failed to toggle favorite:', err)
+    error.value = 'Failed to update favorites'
+  }
+}
+
+// List management
+const toggleListDropdown = (idx) => {
+  activeDropdown.value = activeDropdown.value === idx ? null : idx
+}
+
+const addBeerToList = async (beer, listId) => {
+  if (!authStore.isAuthenticated) return
+  
+  try {
+    const beerId = beer.bid || beer.id || beer.query
+    await listsStore.addBeerToList(authStore.currentUser.id, listId, beerId, null)
+    activeDropdown.value = null
+    // Show success feedback (could add a toast notification here)
+  } catch (err) {
+    console.error('Failed to add beer to list:', err)
+    error.value = 'Failed to add beer to list'
+  }
+}
+
+// Close dropdown when clicking outside
+const handleClickOutside = () => {
+  activeDropdown.value = null
+}
+
+// Load user lists on mount
+onMounted(async () => {
+  if (authStore.isAuthenticated && authStore.currentUser) {
+    try {
+      await listsStore.loadLists(authStore.currentUser.id)
+      await listsStore.loadFavorites(authStore.currentUser.id)
+    } catch (err) {
+      console.error('Failed to load user data:', err)
+    }
+  }
+  
+  // Add click listener for closing dropdowns
+  document.addEventListener('click', handleClickOutside)
+})
+
 const exportCsv = () => {
   const header = 'Beer Name,Brewery,Style,Avg Rating,Check-ins'
   const rows   = results.value.map((r) =>
@@ -257,4 +366,8 @@ const exportCsv = () => {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>

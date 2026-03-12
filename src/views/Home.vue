@@ -10,24 +10,14 @@
           Search thousands of craft beers and discover your new favorites
         </p>
         
-        <!-- Quick Search -->
+        <!-- CTA Button -->
         <div class="max-w-2xl mx-auto">
-          <div class="flex bg-white rounded-lg overflow-hidden shadow-lg">
-            <input
-              v-model="searchQuery"
-              @keyup.enter="handleSearch"
-              type="text"
-              placeholder="Search for beers..."
-              class="flex-1 px-6 py-4 text-lg focus:outline-none"
-            />
-            <button
-              @click="handleSearch"
-              :disabled="!searchQuery.trim()"
-              class="btn-primary px-8 rounded-none disabled:opacity-50"
-            >
-              Search
-            </button>
-          </div>
+          <button
+            @click="router.push('/search')"
+            class="btn-primary px-12 py-4 text-lg shadow-xl hover:shadow-2xl transition-all"
+          >
+            🔍 Start Searching Beers
+          </button>
         </div>
       </div>
     </section>
@@ -116,18 +106,8 @@ export default {
     const router = useRouter()
     const beerStore = useBeerStore()
     const authStore = useAuthStore()
-    const searchQuery = ref('')
     
     const displayBeers = computed(() => beerStore.popularBeers.slice(0, 12))
-    
-    const handleSearch = () => {
-      if (searchQuery.value.trim()) {
-        router.push({ 
-          name: 'Search', 
-          query: { q: searchQuery.value.trim() } 
-        })
-      }
-    }
     
     const loadPopularBeers = async () => {
       try {
@@ -166,11 +146,10 @@ export default {
     })
     
     return {
-      searchQuery,
+      router,
       displayBeers,
       beerStore,
       authStore,
-      handleSearch,
       loadPopularBeers,
       toggleFavorite,
       viewBeerDetails,
