@@ -3,6 +3,8 @@
 import { ref, onMounted, watch } from 'vue'
 import { LMap, LTileLayer, LMarker, LPopup, LIcon } from '@vue-leaflet/vue-leaflet'
 import api from '../services/api'
+import { useGeocoding } from '../composables/useGeocoding'
+import { COUNTRIES } from '../data/countries'
 import 'leaflet/dist/leaflet.css'
 
 const mapRef = ref(null)
@@ -14,6 +16,38 @@ const error = ref(null)
 const userLocation = ref(null)
 const searchCity = ref('')
 const searchCountry = ref('')
+const showCitySuggestions = ref(false)
+
+// Geocoding composable
+const { state: geocodingState, searchCities, clearSuggestions } = useGeocoding()
+
+// Watch city input for autocomplete
+let cityInputTimer = null
+watch(searchCity, (newValue) => {
+  if (newValue && newValue.length >= 2) {
+    searchCities(newValue)
+    showCitySuggestions.value = true
+  } else {
+    clearSuggestions()
+    showCitySuggestions.value = false
+  }
+})
+
+// Select a city from suggestions
+const selectCity = (suggestion) => {
+  searchCity.value = suggestion.city
+  searchCountry.value = suggestion.country
+  center.value = [suggestion.lat, suggestion.lng]
+  showCitySuggestions.value = false
+  clearSuggestions()
+  // Auto-search after selection
+  searchByLocation(suggestion.lat, suggestion.lng)
+}
+
+// Close suggestions when clicking outside
+const closeSuggestions = () => {
+  showCitySuggestions.value = false
+}
 
 // Brewery type icons/colors
 const breweryTypeColors = {
@@ -81,9 +115,9 @@ const searchNearby = async () => {
 }
 
 // Search breweries by city/country
-const searchByLocation = async () => {
-  if (!searchCity.value && !searchCountry.value) {
-    error.value = 'Please enter a city or country to search.'
+const searchByLocation = async (lat = null, lng = null) => {
+  if (!searchCity.value && !searchCountry.value && !lat && !lng) {
+    error.value = 'Please enter a city or select a country to search.'
     return
   }
   
@@ -91,17 +125,38 @@ const searchByLocation = async () => {
   error.value = null
   
   try {
-    const response = await api.getBreweries({
-      city: searchCity.value || undefined,
-      country: searchCountry.value || 'United States',
+    const params = {
       limit: 100
-    })
+    }
+    
+    // If coordinates provided (from city selection), use them
+    if (lat && lng) {
+      params.lat = lat
+      params.lng = lng
+      params.radius = 50 // 50km radius
+    }
+    
+    // Add city if provided
+    if (searchCity.value) {
+      params.city = searchCity.value
+    }
+    
+    // Add country if provided and not "All Countries"
+    if (searchCountry.value) {
+      params.country = searchCountry.value
+    }
+    
+    const response = await api.getBreweries(params)
     breweries.value = response.breweries
     
     if (breweries.value.length > 0) {
-      // Center map on first result
-      center.value = [breweries.value[0].latitude, breweries.value[0].longitude]
-      zoom.value = 11
+      // Center map on first result if we didn't get coordinates from city selection
+      if (!lat && !lng) {
+        center.value = [breweries.value[0].latitude, breweries.value[0].longitude]
+        zoom.value = 11
+      } else {
+        zoom.value = 12
+      }
     } else {
       error.value = 'No breweries found in this location. Try a different city.'
     }
@@ -140,34 +195,52 @@ onMounted(() => {
     <div class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex flex-wrap gap-4 items-end">
-          <div class="flex-1 min-w-[200px]">
+          <div class="flex-1 min-w-[200px] relative">
             <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
             <input
               v-model="searchCity"
               type="text"
-              placeholder="e.g., San Diego, Portland"
+              placeholder="e.g., Porto Alegre, San Diego, London"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               @keyup.enter="searchByLocation"
+              @blur="setTimeout(closeSuggestions, 200)"
             />
+            
+            <!-- City Suggestions Dropdown -->
+            <div
+              v-if="showCitySuggestions && (geocodingState.suggestions.length > 0 || geocodingState.loading)"
+              class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto"
+            >
+              <div v-if="geocodingState.loading" class="px-4 py-3 text-gray-500 text-sm">
+                Searching cities...
+              </div>
+              <div
+                v-for="(suggestion, index) in geocodingState.suggestions"
+                :key="index"
+                @click="selectCity(suggestion)"
+                class="px-4 py-2 hover:bg-amber-50 cursor-pointer border-b last:border-b-0 transition-colors"
+              >
+                <div class="font-medium text-gray-900 text-sm">{{ suggestion.city }}</div>
+                <div class="text-xs text-gray-500">{{ suggestion.country }}</div>
+              </div>
+            </div>
           </div>
-          <div class="w-48">
+          
+          <div class="w-56">
             <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
             <select
               v-model="searchCountry"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             >
               <option value="">All Countries</option>
-              <option value="United States">United States</option>
-              <option value="Germany">Germany</option>
-              <option value="Belgium">Belgium</option>
-              <option value="United Kingdom">United Kingdom</option>
-              <option value="Ireland">Ireland</option>
-              <option value="Canada">Canada</option>
-              <option value="Australia">Australia</option>
+              <option v-for="country in COUNTRIES" :key="country.code" :value="country.name">
+                {{ country.name }}
+              </option>
             </select>
           </div>
+          
           <button
-            @click="searchByLocation"
+            @click="searchByLocation()"
             :disabled="loading"
             class="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
           >

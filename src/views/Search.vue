@@ -3,8 +3,7 @@
     <div class="max-w-5xl mx-auto px-4">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-1">Beer Search 🍺</h1>
-        <p class="text-gray-500 text-sm">All searches processed in one batch call for speed</p>
+        <h1 class="text-3xl font-bold text-gray-900">Beer Search 🍺</h1>
       </div>
 
       <!-- Mode tabs -->
@@ -80,7 +79,6 @@
           placeholder="Paste a bar menu or tap list URL, e.g. https://example.com/taplist"
           class="input-field w-full"
         />
-        <p class="text-xs text-gray-400 mt-2">The AI will visit the page and extract all beer names it finds.</p>
       </div>
 
       <!-- Action row -->

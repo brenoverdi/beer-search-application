@@ -244,7 +244,7 @@ class ApiService {
 
   // ── Breweries ─────────────────────────────────────────────────────────
 
-  async getBreweries({ lat, lng, radius = 25, city, state } = {}) {
+  async getBreweries({ lat, lng, radius = 25, city, state, country, limit = 100 } = {}) {
     const params = new URLSearchParams()
     if (lat != null && lng != null) {
       params.set('lat', lat)
@@ -253,6 +253,8 @@ class ApiService {
     }
     if (city) params.set('city', city)
     if (state) params.set('state', state)
+    if (country) params.set('country', country)
+    if (limit) params.set('limit', limit)
     return this.request(`/breweries/search?${params.toString()}`)
   }
 }
