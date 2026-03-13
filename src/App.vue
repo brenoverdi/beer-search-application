@@ -6,8 +6,8 @@
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
           <router-link to="/" class="flex items-center gap-2 shrink-0">
-            <img src="/logo.svg" alt="BrewScout" class="w-8 h-8" />
-            <span class="text-xl font-bold text-gray-900 hidden sm:inline">BrewScout</span>
+            <img src="/logo.svg" alt="CraftScout" class="w-8 h-8" />
+            <span class="text-xl font-bold text-gray-900 hidden sm:inline">CraftScout</span>
           </router-link>
 
           <!-- Desktop nav -->
@@ -84,10 +84,10 @@
     <footer v-if="!route.meta.public" class="bg-gray-800 text-white py-8 mt-auto">
       <div class="max-w-6xl mx-auto px-4 text-center">
         <div class="flex items-center justify-center gap-2 mb-2">
-          <img src="/logo.svg" alt="BrewScout" class="w-6 h-6" />
-          <span class="text-gray-300 font-semibold">BrewScout</span>
+          <img src="/logo.svg" alt="CraftScout" class="w-6 h-6" />
+          <span class="text-gray-300 font-semibold">CraftScout</span>
         </div>
-        <p class="text-gray-400">&copy; 2026 BrewScout. Discover your perfect beer!</p>
+        <p class="text-gray-400">&copy; 2026 CraftScout. Discover your perfect beer!</p>
         <p class="text-gray-500 text-sm mt-1">Powered by Gemini AI — Drink responsibly</p>
       </div>
     </footer>

@@ -5,17 +5,6 @@
   <!-- Magnifying glass handle -->
   <line x1="62" y1="62" x2="88" y2="88" stroke="#F59E0B" stroke-width="8" stroke-linecap="round"/>
   
-  <!-- Hop cone inside magnifying glass -->
-  <g transform="translate(42, 42)">
-    <!-- Hop petals -->
-    <ellipse cx="0" cy="-8" rx="6" ry="10" fill="#166534"/>
-    <ellipse cx="-7" cy="-3" rx="6" ry="10" fill="#166534" transform="rotate(-40)"/>
-    <ellipse cx="7" cy="-3" rx="6" ry="10" fill="#166534" transform="rotate(40)"/>
-    <ellipse cx="-9" cy="5" rx="5" ry="8" fill="#22C55E" transform="rotate(-60)"/>
-    <ellipse cx="9" cy="5" rx="5" ry="8" fill="#22C55E" transform="rotate(60)"/>
-    <ellipse cx="0" cy="10" rx="4" ry="6" fill="#22C55E"/>
-    
-    <!-- Hop center details -->
-    <circle cx="0" cy="0" r="3" fill="#15803D"/>
-  </g>
+  <!-- Beer emoji inside magnifying glass -->
+  <text x="42" y="50" font-size="28" text-anchor="middle" dominant-baseline="middle">🍺</text>
 </svg>

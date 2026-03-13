@@ -2,8 +2,8 @@
   <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-lg">
       <div class="text-center mb-8">
-        <img src="/logo.svg" alt="BrewScout" class="w-16 h-16 mx-auto" />
-        <h1 class="mt-4 text-3xl font-bold text-gray-900">Join BrewScout</h1>
+        <img src="/logo.svg" alt="CraftScout" class="w-16 h-16 mx-auto" />
+        <h1 class="mt-4 text-3xl font-bold text-gray-900">Join CraftScout</h1>
         <p class="mt-2 text-gray-600">Create your account and start discovering beers</p>
       </div>
 

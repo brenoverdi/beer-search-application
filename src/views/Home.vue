@@ -4,8 +4,8 @@
     <section class="hero-gradient py-20">
       <div class="max-w-4xl mx-auto text-center px-4">
         <div class="flex items-center justify-center gap-3 mb-6">
-          <img src="/logo.svg" alt="BrewScout" class="w-16 h-16" />
-          <h1 class="text-5xl font-bold text-white">BrewScout</h1>
+          <img src="/logo.svg" alt="CraftScout" class="w-16 h-16" />
+          <h1 class="text-5xl font-bold text-white">CraftScout</h1>
         </div>
         <p class="text-xl text-gray-200 mb-8">
           Discover craft beers, explore festivals, and find breweries near you
