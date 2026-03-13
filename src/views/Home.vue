@@ -3,11 +3,12 @@
     <!-- Hero Section -->
     <section class="hero-gradient py-20">
       <div class="max-w-4xl mx-auto text-center px-4">
-        <h1 class="text-5xl font-bold text-white mb-6">
-          🍺 Discover Your Perfect Beer
-        </h1>
+        <div class="flex items-center justify-center gap-3 mb-6">
+          <img src="/logo.svg" alt="BrewScout" class="w-16 h-16" />
+          <h1 class="text-5xl font-bold text-white">BrewScout</h1>
+        </div>
         <p class="text-xl text-gray-200 mb-8">
-          Search thousands of craft beers and discover your new favorites
+          Discover craft beers, explore festivals, and find breweries near you
         </p>
         
         <!-- CTA Button -->
@@ -25,7 +26,47 @@
     <!-- Popular Beers Section -->
     <section class="py-16">
       <div class="max-w-6xl mx-auto px-4">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">🔥 Popular Beers</h2>
+        <!-- Beer of the Day + Popular Beers Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          <!-- Beer of the Day (takes 1 column) -->
+          <div class="lg:col-span-1">
+            <BeerOfTheDay />
+          </div>
+          
+          <!-- Featured Popular Beers (takes 2 columns) -->
+          <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">🔥 Trending Now</h2>
+            <div v-if="!beerStore.loading && displayBeers.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                v-for="beer in displayBeers.slice(0, 4)"
+                :key="beer.query || beer.id"
+                class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer flex"
+                @click="viewBeerDetails(beer)"
+              >
+                <div class="bg-amber-50 border-r border-amber-100 px-4 flex items-center justify-center rounded-l-xl">
+                  <span class="text-2xl">🍺</span>
+                </div>
+                <div class="p-4 flex-1">
+                  <h3 class="font-bold text-gray-900 text-sm leading-tight mb-1">
+                    {{ beer.beer_name || beer.name }}
+                  </h3>
+                  <p class="text-amber-700 text-xs font-medium">
+                    {{ beer.brewery?.brewery_name || beer.brewery || 'Unknown Brewery' }}
+                  </p>
+                  <div v-if="beer.rating_score" class="flex items-center gap-1 mt-2">
+                    <span class="text-amber-400 text-xs">★</span>
+                    <span class="font-semibold text-xs" :class="ratingClass(beer.rating_score)">{{ Number(beer.rating_score).toFixed(2) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="beerStore.loading" class="text-center py-8">
+              <div class="text-xl">⏳ Loading beers...</div>
+            </div>
+          </div>
+        </div>
+        
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">🍻 All Popular Beers</h2>
         
         <div v-if="beerStore.loading" class="text-center">
           <div class="text-2xl">⏳ Loading beers...</div>
@@ -99,9 +140,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBeerStore } from '@/stores/beer'
 import { useAuthStore } from '@/stores/auth'
+import BeerOfTheDay from '@/components/BeerOfTheDay.vue'
 
 export default {
   name: 'Home',
+  components: {
+    BeerOfTheDay
+  },
   setup() {
     const router = useRouter()
     const beerStore = useBeerStore()

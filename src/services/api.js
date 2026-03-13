@@ -70,11 +70,17 @@ class ApiService {
 
   // ── Auth ─────────────────────────────────────────────────────────────────
 
-  async register(username, email, password) {
-    return this.request('/auth/register', {
+  async register(username, email, password, profileData = {}) {
+    const data = await this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password }),
+      body: JSON.stringify({ username, email, password, ...profileData }),
     })
+    // Store tokens if registration returns them (OTP disabled flow)
+    if (data.accessToken && data.refreshToken) {
+      setTokens(data.accessToken, data.refreshToken)
+      localStorage.setItem('user', JSON.stringify(data.user))
+    }
+    return data
   }
 
   async verifyEmail(email, code) {
@@ -211,6 +217,35 @@ class ApiService {
 
   async removeBeerFromList(userId, listId, beerId) {
     return this.request(`/users/${userId}/lists/${listId}/items/${beerId}`, { method: 'DELETE' })
+  }
+
+  // ── Festivals ─────────────────────────────────────────────────────────────
+
+  async getFestivals(continent = 'all') {
+    return this.request(`/festivals?continent=${continent}`)
+  }
+
+  async getFestival(id) {
+    return this.request(`/festivals/${id}`)
+  }
+
+  async createItinerary(festivalId, arrivalDate, departureDate) {
+    return this.request('/festivals/itinerary', {
+      method: 'POST',
+      body: JSON.stringify({ festivalId, arrivalDate, departureDate }),
+    })
+  }
+
+  // ── Beer of the Day ───────────────────────────────────────────────────────
+
+  async getBeerOfTheDay() {
+    return this.request('/beers/of-the-day')
+  }
+
+  // ── Breweries ─────────────────────────────────────────────────────────────
+
+  async getBreweries(lat, lng, radius = 25) {
+    return this.request(`/breweries?lat=${lat}&lng=${lng}&radius=${radius}`)
   }
 }
 

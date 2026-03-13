@@ -17,12 +17,19 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    async register(username, email, password) {
+    async register(username, email, password, profileData = {}) {
       this.loading = true
       this.error = null
       try {
-        const response = await apiService.register(username, email, password)
-        this.pendingVerificationEmail = email
+        const response = await apiService.register(username, email, password, profileData)
+        // New flow: registration now returns tokens directly (OTP disabled)
+        if (response.accessToken) {
+          this.user = response.user
+          localStorage.setItem('user', JSON.stringify(response.user))
+        } else {
+          // Fallback for OTP flow if re-enabled
+          this.pendingVerificationEmail = email
+        }
         return response
       } catch (error) {
         this.error = error.message

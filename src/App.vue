@@ -6,14 +6,16 @@
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
           <router-link to="/" class="flex items-center gap-2 shrink-0">
-            <span class="text-2xl">🍺</span>
-            <span class="text-xl font-bold text-gray-900 hidden sm:inline">Beer Search</span>
+            <img src="/logo.svg" alt="BrewScout" class="w-8 h-8" />
+            <span class="text-xl font-bold text-gray-900 hidden sm:inline">BrewScout</span>
           </router-link>
 
           <!-- Desktop nav -->
           <div class="hidden md:flex items-center gap-1">
             <router-link to="/" exact-active-class="nav-link-active" class="nav-link">Home</router-link>
             <router-link to="/search" active-class="nav-link-active" class="nav-link">Search</router-link>
+            <router-link to="/festivals" active-class="nav-link-active" class="nav-link">Festivals</router-link>
+            <router-link to="/breweries" active-class="nav-link-active" class="nav-link">Breweries</router-link>
             <router-link to="/favorites" active-class="nav-link-active" class="nav-link">Favorites</router-link>
             <router-link to="/lists" active-class="nav-link-active" class="nav-link">Lists</router-link>
           </div>
@@ -54,6 +56,8 @@
           <div class="px-4 pt-2 pb-4 space-y-1">
             <router-link @click="mobileOpen = false" to="/" exact-active-class="nav-link-active" class="nav-link block">Home</router-link>
             <router-link @click="mobileOpen = false" to="/search" active-class="nav-link-active" class="nav-link block">Search</router-link>
+            <router-link @click="mobileOpen = false" to="/festivals" active-class="nav-link-active" class="nav-link block">Festivals</router-link>
+            <router-link @click="mobileOpen = false" to="/breweries" active-class="nav-link-active" class="nav-link block">Breweries</router-link>
             <router-link @click="mobileOpen = false" to="/favorites" active-class="nav-link-active" class="nav-link block">Favorites</router-link>
             <router-link @click="mobileOpen = false" to="/lists" active-class="nav-link-active" class="nav-link block">Lists</router-link>
             <div class="pt-2 border-t border-gray-100">
@@ -79,7 +83,11 @@
     <!-- Footer — hidden on auth pages -->
     <footer v-if="!route.meta.public" class="bg-gray-800 text-white py-8 mt-auto">
       <div class="max-w-6xl mx-auto px-4 text-center">
-        <p class="text-gray-300">&copy; 2024 Beer Search. Discover your perfect beer! 🍺</p>
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <img src="/logo.svg" alt="BrewScout" class="w-6 h-6" />
+          <span class="text-gray-300 font-semibold">BrewScout</span>
+        </div>
+        <p class="text-gray-400">&copy; 2026 BrewScout. Discover your perfect beer!</p>
         <p class="text-gray-500 text-sm mt-1">Powered by Gemini AI — Drink responsibly</p>
       </div>
     </footer>

@@ -11,6 +11,8 @@
     "lint:fix": "eslint src --fix"
   },
   "dependencies": {
+    "@vue-leaflet/vue-leaflet": "^0.10.1",
+    "leaflet": "^1.9.4",
     "pinia": "^2.1.0",
     "vue": "^3.3.0",
     "vue-router": "^4.2.0"

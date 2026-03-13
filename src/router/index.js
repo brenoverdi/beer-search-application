@@ -10,6 +10,9 @@ const VerifyEmail = () => import('../views/VerifyEmail.vue')
 const Favorites = () => import('../views/Favorites.vue')
 const Lists = () => import('../views/Lists.vue')
 const ListDetail = () => import('../views/ListDetail.vue')
+const Festivals = () => import('../views/Festivals.vue')
+const FestivalDetail = () => import('../views/FestivalDetail.vue')
+const BreweryMap = () => import('../views/BreweryMap.vue')
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -20,6 +23,9 @@ const routes = [
   { path: '/favorites', name: 'Favorites', component: Favorites },
   { path: '/lists', name: 'Lists', component: Lists },
   { path: '/lists/:listId', name: 'ListDetail', component: ListDetail },
+  { path: '/festivals', name: 'Festivals', component: Festivals, meta: { public: true } },
+  { path: '/festivals/:id', name: 'FestivalDetail', component: FestivalDetail, meta: { public: true } },
+  { path: '/breweries', name: 'BreweryMap', component: BreweryMap, meta: { public: true } },
 ]
 
 const router = createRouter({
