@@ -88,7 +88,7 @@
           <span class="text-gray-300 font-semibold">CraftScout</span>
         </div>
         <p class="text-gray-400">&copy; 2026 CraftScout. Discover your perfect beer!</p>
-        <p class="text-gray-500 text-sm mt-1">Powered by Gemini AI — Drink responsibly</p>
+        <p class="text-gray-500 text-sm mt-1">Powered by AI — Drink responsibly</p>
       </div>
     </footer>
   </div>

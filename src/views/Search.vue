@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-1">Beer Search 🍺</h1>
-        <p class="text-gray-500 text-sm">Powered by Gemini AI — all searches go in one batch call</p>
+        <p class="text-gray-500 text-sm">All searches processed in one batch call for speed</p>
       </div>
 
       <!-- Mode tabs -->

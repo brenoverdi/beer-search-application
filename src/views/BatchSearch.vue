@@ -55,7 +55,7 @@
       <div v-if="activeTab === 'image'" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-1">Upload a Beer Photo</h2>
         <p class="text-sm text-gray-500 mb-4">
-          A photo of a shelf, tap list, menu, or bottles. Gemini AI will read the beer names for you.
+          A photo of a shelf, tap list, menu, or bottles. AI will read the beer names for you.
         </p>
 
         <!-- Drop zone -->
@@ -84,7 +84,7 @@
           </div>
         </div>
 
-        <!-- Extracted names preview (after Gemini returns) -->
+        <!-- Extracted names preview (after AI returns) -->
         <div v-if="extractedNames.length > 0" class="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
           <p class="text-sm font-medium text-amber-800 mb-1">🍺 Beer names detected by AI:</p>
           <ul class="text-sm text-amber-700 list-disc list-inside space-y-0.5">
