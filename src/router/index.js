@@ -17,15 +17,15 @@ const BreweryMap = () => import('../views/BreweryMap.vue')
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/search', name: 'Search', component: Search },
-  { path: '/login', name: 'Login', component: Login, meta: { public: true } },
-  { path: '/register', name: 'Register', component: Register, meta: { public: true } },
-  { path: '/verify-email', name: 'VerifyEmail', component: VerifyEmail, meta: { public: true } },
+  { path: '/login', name: 'Login', component: Login, meta: { guest: true } },
+  { path: '/register', name: 'Register', component: Register, meta: { guest: true } },
+  { path: '/verify-email', name: 'VerifyEmail', component: VerifyEmail, meta: { guest: true } },
   { path: '/favorites', name: 'Favorites', component: Favorites },
   { path: '/lists', name: 'Lists', component: Lists },
   { path: '/lists/:listId', name: 'ListDetail', component: ListDetail },
-  { path: '/festivals', name: 'Festivals', component: Festivals, meta: { public: true } },
-  { path: '/festivals/:id', name: 'FestivalDetail', component: FestivalDetail, meta: { public: true } },
-  { path: '/breweries', name: 'BreweryMap', component: BreweryMap, meta: { public: true } },
+  { path: '/festivals', name: 'Festivals', component: Festivals },
+  { path: '/festivals/:id', name: 'FestivalDetail', component: FestivalDetail },
+  { path: '/breweries', name: 'BreweryMap', component: BreweryMap },
 ]
 
 const router = createRouter({
@@ -37,8 +37,8 @@ const router = createRouter({
 // Global navigation guard
 router.beforeEach((to) => {
   const auth = useAuthStore()
-  if (to.meta.public) {
-    // Already logged in — skip past login/register to home
+  // Guest-only routes (login, register) — redirect logged-in users to home
+  if (to.meta.guest) {
     if (auth.isLoggedIn) return { name: 'Home' }
     return
   }

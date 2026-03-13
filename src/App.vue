@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen flex flex-col bg-gray-50">
-    <!-- Navigation — hidden on auth pages -->
-    <nav v-if="!route.meta.public" class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+    <!-- Navigation — hidden on auth pages (login/register/verify) -->
+    <nav v-if="!route.meta.guest" class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
       <div class="max-w-6xl mx-auto px-4">
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->

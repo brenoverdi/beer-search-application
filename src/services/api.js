@@ -239,13 +239,21 @@ class ApiService {
   // ── Beer of the Day ───────────────────────────────────────────────────────
 
   async getBeerOfTheDay() {
-    return this.request('/beers/of-the-day')
+    return this.request('/beer-of-the-day')
   }
 
-  // ── Breweries ─────────────────────────────────────────────────────────────
+  // ── Breweries ─────────────────────────────────────────────────────────
 
-  async getBreweries(lat, lng, radius = 25) {
-    return this.request(`/breweries?lat=${lat}&lng=${lng}&radius=${radius}`)
+  async getBreweries({ lat, lng, radius = 25, city, state } = {}) {
+    const params = new URLSearchParams()
+    if (lat != null && lng != null) {
+      params.set('lat', lat)
+      params.set('lng', lng)
+      params.set('radius', radius)
+    }
+    if (city) params.set('city', city)
+    if (state) params.set('state', state)
+    return this.request(`/breweries/search?${params.toString()}`)
   }
 }
 
