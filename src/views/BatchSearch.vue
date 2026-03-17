@@ -85,11 +85,12 @@
         </div>
 
         <!-- Extracted names preview (after AI returns) -->
-        <div v-if="extractedNames.length > 0" class="mt-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          <p class="text-sm font-medium text-amber-800 mb-1">🍺 Detected beers:</p>
-          <ul class="text-sm text-amber-700 list-disc list-inside space-y-0.5">
-            <li v-for="name in extractedNames" :key="name">{{ name }}</li>
+        <div v-if="extractedNames.length > 0" class="mt-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+          <p class="text-sm font-medium text-blue-900 mb-2">🤖 Detected {{ extractedNames.length }} beer{{ extractedNames.length !== 1 ? 's' : '' }} in image:</p>
+          <ul class="text-sm text-blue-800 list-disc list-inside space-y-0.5 max-h-40 overflow-y-auto">
+            <li v-for="(name, i) in extractedNames" :key="i">{{ name }}</li>
           </ul>
+          <p class="text-xs text-blue-600 mt-2 italic">These names will be searched on Untappd when you click "Scan & Search"</p>
         </div>
 
         <div class="flex justify-end mt-4">
@@ -146,8 +147,8 @@
                 <!-- Not found -->
                 <template v-if="!row.beer">
                   <td class="px-4 py-3" colspan="5">
-                    <span class="text-gray-400 italic">{{ row.query }}</span>
-                    <span class="ml-2 text-xs text-red-400 font-medium">— not found</span>
+                    <span class="text-gray-600 italic">"{{ row.query }}"</span>
+                    <span class="ml-2 text-xs text-red-500 font-medium">— not found on Untappd</span>
                   </td>
                 </template>
 

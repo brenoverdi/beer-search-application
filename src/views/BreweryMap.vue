@@ -1,69 +1,115 @@
 <!-- eslint-disable no-unused-vars -->
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { LMap, LTileLayer, LMarker, LPopup, LIcon } from '@vue-leaflet/vue-leaflet'
-import api from '../services/api'
-import { useGeocoding } from '../composables/useGeocoding'
-import { COUNTRIES } from '../data/countries'
-import 'leaflet/dist/leaflet.css'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 
-const mapRef = ref(null)
-const center = ref([40.7128, -74.0060]) // Default: NYC
-const zoom = ref(12)
+const mapElement = ref(null)
+const map = ref(null)
+const placesService = ref(null)
+const markers = ref([])
+const infoWindow = ref(null)
+const geocoder = ref(null)
+const PlacesServiceStatus = ref(null)
+
 const breweries = ref([])
 const loading = ref(false)
 const error = ref(null)
-const userLocation = ref(null)
 const searchCity = ref('')
-const searchCountry = ref('')
-const showCitySuggestions = ref(false)
+const searchQuery = ref('brewery')
 
-// Geocoding composable
-const { state: geocodingState, searchCities, clearSuggestions } = useGeocoding()
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
-// Watch city input for autocomplete
-let cityInputTimer = null
-watch(searchCity, (newValue) => {
-  if (newValue && newValue.length >= 2) {
-    searchCities(newValue)
-    showCitySuggestions.value = true
-  } else {
-    clearSuggestions()
-    showCitySuggestions.value = false
+// Configure Google Maps API options once (outside initMap to avoid multiple calls)
+if (GOOGLE_MAPS_API_KEY) {
+  setOptions({
+    apiKey: GOOGLE_MAPS_API_KEY,
+    version: 'weekly'
+  })
+}
+
+// Initialize Google Maps
+const initMap = async () => {
+  if (!GOOGLE_MAPS_API_KEY) {
+    error.value = 'Google Maps API key not configured'
+    return
   }
-})
 
-// Select a city from suggestions
-const selectCity = (suggestion) => {
-  searchCity.value = suggestion.city
-  searchCountry.value = suggestion.country
-  center.value = [suggestion.lat, suggestion.lng]
-  showCitySuggestions.value = false
-  clearSuggestions()
-  // Auto-search after selection
-  searchByLocation(suggestion.lat, suggestion.lng)
+  try {
+    // Import required libraries
+    const { Map } = await importLibrary('maps')
+    const { InfoWindow } = await importLibrary('maps')
+    const { PlacesService, PlacesServiceStatus: PSS } = await importLibrary('places')
+    const { Geocoder } = await importLibrary('geocoding')
+
+    // Store references for use in other functions
+    PlacesServiceStatus.value = PSS
+    geocoder.value = new Geocoder()
+
+    // Default to NYC, will update with user location or search
+    map.value = new Map(mapElement.value, {
+      center: { lat: 40.7128, lng: -74.0060 },
+      zoom: 12,
+      mapId: 'brewery-map'
+    })
+
+    infoWindow.value = new InfoWindow()
+
+    // Initialize Places service
+    placesService.value = new PlacesService(map.value)
+
+    // Try to get user location
+    getUserLocation()
+  } catch (err) {
+    console.error('Failed to load Google Maps:', err)
+    error.value = 'Failed to load map. Please refresh the page.'
+  }
 }
 
-// Close suggestions when clicking outside
-const closeSuggestions = () => {
-  showCitySuggestions.value = false
+// Clear existing markers
+const clearMarkers = () => {
+  markers.value.forEach(marker => marker.setMap(null))
+  markers.value = []
+  breweries.value = []
 }
 
-// Brewery type icons/colors
-const breweryTypeColors = {
-  micro: '#16a34a',      // green
-  brewpub: '#2563eb',    // blue
-  regional: '#9333ea',   // purple
-  large: '#dc2626',      // red
-  contract: '#f59e0b',   // amber
-  proprietor: '#0891b2', // cyan
-  planning: '#6b7280',   // gray
-  nano: '#84cc16',       // lime
-  closed: '#374151',     // dark gray
-}
+// Create marker for brewery
+const createMarker = async (place) => {
+  const { AdvancedMarkerElement } = await importLibrary('marker')
+  
+  const marker = new AdvancedMarkerElement({
+    map: map.value,
+    position: place.geometry.location,
+    title: place.name
+  })
 
-const getBreweryColor = (type) => {
-  return breweryTypeColors[type] || '#d97706'
+  marker.addListener('click', () => {
+    const content = `
+      <div class="p-3 min-w-[250px]">
+        <h3 class="font-bold text-gray-900 text-lg mb-2">${place.name}</h3>
+        ${place.rating ? `<div class="text-sm text-amber-600 mb-2">⭐ ${place.rating} (${place.user_ratings_total || 0} reviews)</div>` : ''}
+        ${place.vicinity ? `<p class="text-sm text-gray-600 mb-2">📍 ${place.vicinity}</p>` : ''}
+        ${place.opening_hours ? `<p class="text-sm ${place.opening_hours.open_now ? 'text-green-600' : 'text-red-600'} mb-2">${place.opening_hours.open_now ? '✓ Open now' : '✗ Closed'}</p>` : ''}
+        ${place.website ? `<a href="${place.website}" target="_blank" class="text-sm text-amber-600 hover:text-amber-800 font-medium">🌐 Visit Website →</a>` : ''}
+      </div>
+    `
+    infoWindow.value.setContent(content)
+    infoWindow.value.open(map.value, marker)
+  })
+
+  markers.value.push(marker)
+  
+  return {
+    id: place.place_id,
+    name: place.name,
+    address: place.vicinity || '',
+    rating: place.rating || null,
+    total_ratings: place.user_ratings_total || 0,
+    open_now: place.opening_hours?.open_now || null,
+    location: {
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng()
+    }
+  }
 }
 
 // Get user's location
@@ -71,113 +117,117 @@ const getUserLocation = () => {
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        userLocation.value = {
+        const pos = {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         }
-        center.value = [position.coords.latitude, position.coords.longitude]
-        searchNearby()
+        map.value.setCenter(pos)
+        searchNearby(pos)
       },
       (err) => {
         console.error('Geolocation error:', err)
-        error.value = 'Could not get your location. Try searching by city instead.'
       }
     )
-  } else {
-    error.value = 'Geolocation is not supported by your browser.'
   }
 }
 
-// Search breweries near coordinates
-const searchNearby = async () => {
-  if (!userLocation.value) return
-  
+// Search breweries nearby
+const searchNearby = (location) => {
+  if (!placesService.value || !location) return
+
   loading.value = true
   error.value = null
-  
-  try {
-    const response = await api.getBreweries({
-      lat: userLocation.value.lat,
-      lng: userLocation.value.lng,
-      limit: 100
-    })
-    breweries.value = response.breweries
-    
-    if (breweries.value.length === 0) {
-      error.value = 'No breweries found nearby. Try a different location.'
-    }
-  } catch (err) {
-    console.error('Failed to fetch breweries:', err)
-    error.value = 'Failed to load breweries. Please try again.'
-  } finally {
+  clearMarkers()
+
+  const request = {
+    location: location,
+    radius: 10000, // 10km
+    keyword: 'brewery',
+    type: 'bar'
+  }
+
+  placesService.value.nearbySearch(request, async (results, status) => {
     loading.value = false
-  }
-}
 
-// Search breweries by city/country
-const searchByLocation = async (lat = null, lng = null) => {
-  if (!searchCity.value && !searchCountry.value && !lat && !lng) {
-    error.value = 'Please enter a city or select a country to search.'
-    return
-  }
-  
-  loading.value = true
-  error.value = null
-  
-  try {
-    const params = {
-      limit: 100
-    }
-    
-    // If coordinates provided (from city selection), use them
-    if (lat && lng) {
-      params.lat = lat
-      params.lng = lng
-      params.radius = 50 // 50km radius
-    }
-    
-    // Add city if provided
-    if (searchCity.value) {
-      params.city = searchCity.value
-    }
-    
-    // Add country if provided and not "All Countries"
-    if (searchCountry.value) {
-      params.country = searchCountry.value
-    }
-    
-    const response = await api.getBreweries(params)
-    breweries.value = response.breweries
-    
-    if (breweries.value.length > 0) {
-      // Center map on first result if we didn't get coordinates from city selection
-      if (!lat && !lng) {
-        center.value = [breweries.value[0].latitude, breweries.value[0].longitude]
-        zoom.value = 11
-      } else {
-        zoom.value = 12
+    if (status === PlacesServiceStatus.value.OK && results) {
+      breweries.value = await Promise.all(results.map(place => createMarker(place)))
+      
+      if (breweries.value.length === 0) {
+        error.value = 'No breweries found nearby.'
       }
     } else {
-      error.value = 'No breweries found in this location. Try a different city.'
+      error.value = 'Failed to find breweries. Try a different location.'
     }
+  })
+}
+
+// Search breweries by city
+const searchByLocation = async () => {
+  if (!searchCity.value && !map.value) {
+    error.value = 'Please enter a city to search.'
+    return
+  }
+
+  loading.value = true
+  error.value = null
+  clearMarkers()
+
+  try {
+    // Use Geocoder to find the city location
+    const query = searchQuery.value + ' in ' + searchCity.value
+    
+    geocoder.value.geocode({ address: searchCity.value }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const location = results[0].geometry.location
+        map.value.setCenter(location)
+        map.value.setZoom(12)
+
+        // Search for breweries using text search in this city
+        const request = {
+          location: location,
+          radius: 15000, // 15km radius
+          query: query
+        }
+
+        placesService.value.textSearch(request, async (results, status) => {
+          loading.value = false
+
+          if (status === PlacesServiceStatus.value.OK && results) {
+            breweries.value = await Promise.all(results.map(place => createMarker(place)))
+            
+            if (breweries.value.length === 0) {
+              error.value = `No breweries found in ${searchCity.value}.`
+            }
+          } else {
+            error.value = `No breweries found in ${searchCity.value}. Try a different city.`
+          }
+        })
+      } else {
+        loading.value = false
+        error.value = 'City not found. Please try a different search.'
+      }
+    })
   } catch (err) {
-    console.error('Failed to fetch breweries:', err)
-    error.value = 'Failed to load breweries. Please try again.'
-  } finally {
     loading.value = false
+    console.error('Search error:', err)
+    error.value = 'Failed to search. Please try again.'
   }
 }
 
-// Open website in new tab
-const openWebsite = (url) => {
-  if (url) {
-    window.open(url, '_blank')
+// Center map on brewery
+const centerOnBrewery = (brewery) => {
+  if (brewery.location && map.value) {
+    map.value.setCenter(brewery.location)
+    map.value.setZoom(16)
   }
 }
 
 onMounted(() => {
-  // Try to get user location on mount
-  getUserLocation()
+  initMap()
+})
+
+onUnmounted(() => {
+  clearMarkers()
 })
 </script>
 
@@ -187,7 +237,7 @@ onMounted(() => {
     <div class="bg-amber-600 text-white py-8">
       <div class="max-w-7xl mx-auto px-4">
         <h1 class="text-3xl font-bold mb-2">🗺️ Brewery Map</h1>
-        <p class="text-amber-100">Discover breweries near you or search by city</p>
+        <p class="text-amber-100">Discover breweries near you or search any city worldwide</p>
       </div>
     </div>
 
@@ -195,54 +245,34 @@ onMounted(() => {
     <div class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 py-4">
         <div class="flex flex-wrap gap-4 items-end">
-          <div class="flex-1 min-w-[200px] relative">
+          <div class="flex-1 min-w-[250px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
             <input
               v-model="searchCity"
               type="text"
-              placeholder="e.g., Porto Alegre, San Diego, London"
+              placeholder="e.g., Porto Alegre, San Diego, London, Tokyo"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
               @keyup.enter="searchByLocation"
-              @blur="setTimeout(closeSuggestions, 200)"
             />
-            
-            <!-- City Suggestions Dropdown -->
-            <div
-              v-if="showCitySuggestions && (geocodingState.suggestions.length > 0 || geocodingState.loading)"
-              class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto"
-            >
-              <div v-if="geocodingState.loading" class="px-4 py-3 text-gray-500 text-sm">
-                Searching cities...
-              </div>
-              <div
-                v-for="(suggestion, index) in geocodingState.suggestions"
-                :key="index"
-                @click="selectCity(suggestion)"
-                class="px-4 py-2 hover:bg-amber-50 cursor-pointer border-b last:border-b-0 transition-colors"
-              >
-                <div class="font-medium text-gray-900 text-sm">{{ suggestion.city }}</div>
-                <div class="text-xs text-gray-500">{{ suggestion.country }}</div>
-              </div>
-            </div>
           </div>
           
-          <div class="w-56">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+          <div class="w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Search For</label>
             <select
-              v-model="searchCountry"
+              v-model="searchQuery"
               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
             >
-              <option value="">All Countries</option>
-              <option v-for="country in COUNTRIES" :key="country.code" :value="country.name">
-                {{ country.name }}
-              </option>
+              <option value="brewery">Breweries</option>
+              <option value="craft brewery">Craft Breweries</option>
+              <option value="brewpub">Brewpubs</option>
+              <option value="microbrewery">Microbreweries</option>
             </select>
           </div>
           
           <button
             @click="searchByLocation()"
-            :disabled="loading"
-            class="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
+            :disabled="loading || !searchCity"
+            class="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading ? 'Searching...' : 'Search' }}
           </button>
@@ -270,68 +300,21 @@ onMounted(() => {
                   @click="getUserLocation"
                   class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
                 >
-                  Try Again
+                  Try Near Me
                 </button>
               </div>
             </div>
-            <l-map
-              v-else
-              ref="mapRef"
-              :zoom="zoom"
-              :center="center"
-              style="height: 500px; width: 100%"
-              :use-global-leaflet="false"
-            >
-              <l-tile-layer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>"
-              />
-              
-              <!-- User location marker -->
-              <l-marker
-                v-if="userLocation"
-                :lat-lng="[userLocation.lat, userLocation.lng]"
-              >
-                <l-popup>
-                  <strong>📍 You are here</strong>
-                </l-popup>
-              </l-marker>
-              
-              <!-- Brewery markers -->
-              <l-marker
-                v-for="brewery in breweries"
-                :key="brewery.id"
-                :lat-lng="[brewery.latitude, brewery.longitude]"
-              >
-                <l-popup>
-                  <div class="min-w-[200px]">
-                    <h3 class="font-bold text-gray-900">{{ brewery.name }}</h3>
-                    <span
-                      class="inline-block px-2 py-0.5 text-xs font-medium text-white rounded mt-1"
-                      :style="{ backgroundColor: getBreweryColor(brewery.type) }"
-                    >
-                      {{ brewery.type || 'Brewery' }}
-                    </span>
-                    <p class="text-sm text-gray-600 mt-2">{{ brewery.address }}</p>
-                    <p v-if="brewery.phone" class="text-sm text-gray-500">📞 {{ brewery.phone }}</p>
-                    <button
-                      v-if="brewery.website"
-                      @click="openWebsite(brewery.website)"
-                      class="mt-2 text-sm text-amber-600 hover:text-amber-800 font-medium"
-                    >
-                      🌐 Visit Website →
-                    </button>
-                  </div>
-                </l-popup>
-              </l-marker>
-            </l-map>
+            <div v-else ref="mapElement" class="w-full h-[500px]"></div>
           </div>
           
           <!-- Results info -->
           <div class="mt-4 text-sm text-gray-600">
-            <span v-if="loading">Loading breweries...</span>
+            <span v-if="loading">🔍 Searching for breweries...</span>
             <span v-else-if="breweries.length > 0">
-              Showing {{ breweries.length }} breweries with coordinates
+              ✓ Found {{ breweries.length }} {{ breweries.length === 1 ? 'brewery' : 'breweries' }}
+            </span>
+            <span v-else-if="error">
+              {{ error }}
             </span>
           </div>
         </div>
@@ -340,47 +323,50 @@ onMounted(() => {
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="bg-amber-50 px-4 py-3 border-b border-amber-100">
-              <h2 class="font-bold text-amber-900">Breweries</h2>
+              <h2 class="font-bold text-amber-900">Results</h2>
             </div>
             
             <div class="max-h-[450px] overflow-y-auto">
               <div v-if="loading" class="p-4 text-center text-gray-500">
-                Loading...
+                <div class="animate-spin w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                Searching...
               </div>
               <div v-else-if="breweries.length === 0" class="p-4 text-center text-gray-500">
-                No breweries found. Try searching a different location.
+                <p class="mb-2">🔍 No breweries found</p>
+                <p class="text-xs">Try searching a different city or use "Near Me"</p>
               </div>
               <div v-else>
                 <div
                   v-for="brewery in breweries"
                   :key="brewery.id"
                   class="p-3 border-b hover:bg-amber-50 cursor-pointer transition-colors"
-                  @click="center = [brewery.latitude, brewery.longitude]; zoom = 15"
+                  @click="centerOnBrewery(brewery)"
                 >
                   <h3 class="font-medium text-gray-900 text-sm">{{ brewery.name }}</h3>
                   <div class="flex items-center gap-2 mt-1">
-                    <span
-                      class="px-2 py-0.5 text-xs font-medium text-white rounded"
-                      :style="{ backgroundColor: getBreweryColor(brewery.type) }"
+                    <span v-if="brewery.rating" class="text-xs text-amber-600">
+                      ⭐ {{ brewery.rating }}
+                    </span>
+                    <span v-if="brewery.open_now !== null" 
+                      :class="brewery.open_now ? 'text-green-600' : 'text-red-600'"
+                      class="text-xs"
                     >
-                      {{ brewery.type || 'brewery' }}
+                      {{ brewery.open_now ? '● Open' : '● Closed' }}
                     </span>
                   </div>
-                  <p class="text-xs text-gray-500 mt-1">{{ brewery.city }}, {{ brewery.state }}</p>
+                  <p class="text-xs text-gray-500 mt-1">{{ brewery.address }}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Legend -->
-          <div class="bg-white rounded-xl shadow-lg border border-gray-200 mt-4 p-4">
-            <h3 class="font-bold text-gray-900 mb-3 text-sm">Brewery Types</h3>
-            <div class="grid grid-cols-2 gap-2 text-xs">
-              <div v-for="(color, type) in breweryTypeColors" :key="type" class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: color }"></div>
-                <span class="capitalize text-gray-700">{{ type }}</span>
-              </div>
-            </div>
+          <!-- Info Box -->
+          <div class="bg-blue-50 rounded-xl border border-blue-200 mt-4 p-4">
+            <h3 class="font-bold text-blue-900 mb-2 text-sm">💡 Tip</h3>
+            <p class="text-xs text-blue-800">
+              Click on any brewery marker for details, ratings, and website links. 
+              Powered by Google Maps for worldwide coverage!
+            </p>
           </div>
         </div>
       </div>
@@ -389,12 +375,5 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Custom map popup styling */
-:deep(.leaflet-popup-content-wrapper) {
-  border-radius: 12px;
-}
-
-:deep(.leaflet-popup-content) {
-  margin: 12px;
-}
+/* Ensure Google Maps renders properly */
 </style>

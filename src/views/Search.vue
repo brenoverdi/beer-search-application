@@ -121,6 +121,7 @@
                 <th class="px-5 py-3 text-left font-medium">Brewery</th>
                 <th class="px-5 py-3 text-left font-medium">Style</th>
                 <th class="px-5 py-3 text-right font-medium">ABV</th>
+                <th class="px-5 py-3 text-right font-medium">IBU</th>
                 <th class="px-5 py-3 text-right font-medium">Avg Rating</th>
                 <th class="px-5 py-3 text-right font-medium">Check-ins</th>
                 <th class="px-5 py-3 text-center font-medium">Actions</th>
@@ -143,6 +144,10 @@
                   <span v-if="r.abv !== null && r.abv !== undefined">{{ Number(r.abv).toFixed(1) }}%</span>
                   <span v-else class="text-gray-300">—</span>
                 </td>
+                <td class="px-5 py-3 text-right text-gray-600 text-sm">
+                  <span v-if="r.ibu !== null && r.ibu !== undefined">{{ r.ibu }}</span>
+                  <span v-else class="text-gray-300">—</span>
+                </td>
                 <td class="px-5 py-3 text-right">
                   <span
                     v-if="r.rating_score !== null"
@@ -154,7 +159,7 @@
                   <span v-else class="text-gray-300">—</span>
                 </td>
                 <td class="px-5 py-3 text-right text-gray-600">
-                  {{ r.rating_count !== null ? r.rating_count.toLocaleString() : '—' }}
+                  {{ r.check_ins !== null && r.check_ins !== undefined ? r.check_ins.toLocaleString() : '—' }}
                 </td>
                 <td class="px-5 py-3">
                   <div class="flex items-center justify-center gap-2">
@@ -369,9 +374,9 @@ onMounted(async () => {
 })
 
 const exportCsv = () => {
-  const header = 'Beer Name,Brewery,Style,Avg Rating,Check-ins'
+  const header = 'Beer Name,Brewery,Style,ABV,IBU,Avg Rating,Check-ins'
   const rows   = results.value.map((r) =>
-    [r.beer_name, r.brewery, r.style, r.rating_score ?? '', r.rating_count ?? '']
+    [r.beer_name, r.brewery, r.style, r.abv ?? '', r.ibu ?? '', r.rating_score ?? '', r.check_ins ?? '']
       .map((v) => `"${String(v).replace(/"/g, '""')}"`)
       .join(',')
   )

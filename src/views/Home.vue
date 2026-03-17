@@ -89,9 +89,14 @@
             <!-- Card header band -->
             <div class="bg-amber-50 border-b border-amber-100 px-5 py-4 rounded-t-xl flex items-center justify-between">
               <span class="text-3xl">🍺</span>
-              <span v-if="beer.abv" class="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
-                {{ Number(beer.abv).toFixed(1) }}% ABV
-              </span>
+              <div class="flex items-center gap-1.5">
+                <span v-if="beer.abv" class="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                  {{ Number(beer.abv).toFixed(1) }}% ABV
+                </span>
+                <span v-if="beer.ibu" class="text-xs font-semibold text-amber-600 bg-amber-100 px-2.5 py-1 rounded-full">
+                  {{ beer.ibu }} IBU
+                </span>
+              </div>
             </div>
             <!-- Card body -->
             <div class="p-5 flex flex-col flex-1">
@@ -113,7 +118,7 @@
                 <div v-if="beer.rating_score" class="flex items-center gap-1.5">
                   <span class="text-amber-400 text-sm">★</span>
                   <span class="font-semibold text-sm" :class="ratingClass(beer.rating_score)">{{ Number(beer.rating_score).toFixed(2) }}</span>
-                  <span v-if="beer.rating_count" class="text-gray-400 text-xs">({{ Number(beer.rating_count).toLocaleString() }})</span>
+                  <span v-if="beer.check_ins" class="text-gray-400 text-xs">({{ Number(beer.check_ins).toLocaleString() }} check-ins)</span>
                 </div>
                 <div v-else class="text-xs text-gray-400">No rating</div>
                 <button
