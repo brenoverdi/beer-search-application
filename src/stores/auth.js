@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', {
     loading: false,
     error: null,
     pendingVerificationEmail: null, // email waiting for OTP
+    searchesRemaining: parseInt(localStorage.getItem('searchesRemaining') || '5', 10),
   }),
 
   getters: {
@@ -14,6 +15,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.user && !!localStorage.getItem('access_token'),
     currentUser: (state) => state.user,
     needsVerification: (state) => !!state.pendingVerificationEmail,
+    isPremium: (state) => !!state.user?.isPremium,
   },
 
   actions: {
@@ -105,6 +107,39 @@ export const useAuthStore = defineStore('auth', {
         localStorage.removeItem('user')
       }
     },
+
+    async fetchUser() {
+      if (!this.isLoggedIn) return
+      this.loading = true
+      try {
+        const data = await apiService.getMe()
+        this.user = data
+        this.searchesRemaining = data.searchesRemaining ?? 5
+        localStorage.setItem('user', JSON.stringify(data))
+        localStorage.setItem('searchesRemaining', this.searchesRemaining.toString())
+      } catch (err) {
+        console.error('Failed to fetch profile', err)
+      } finally {
+        this.loading = false
+      }
+    },
+
+    decrementSearch() {
+      if (this.searchesRemaining > 0) {
+        this.searchesRemaining -= 1
+        localStorage.setItem('searchesRemaining', this.searchesRemaining.toString())
+      }
+    },
+
+    async upgradeToPremium() {
+      if (this.user) {
+        const data = await apiService.upgradePremium()
+        this.user = data.user
+        this.searchesRemaining = data.user.searchesRemaining
+        localStorage.setItem('user', JSON.stringify(this.user))
+        localStorage.setItem('searchesRemaining', this.searchesRemaining.toString())
+      }
+    }
   },
 })
 

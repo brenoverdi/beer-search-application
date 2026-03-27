@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between h-16">
           <!-- Logo -->
           <router-link to="/" class="flex items-center gap-2 shrink-0">
-            <img src="/logo.svg" alt="CraftScout" class="w-8 h-8" />
+            <img src="/logo.png" alt="CraftScout" class="w-8 h-8" />
             <span class="text-xl font-bold text-gray-900 hidden sm:inline">CraftScout</span>
           </router-link>
 
@@ -18,6 +18,7 @@
             <router-link to="/breweries" active-class="nav-link-active" class="nav-link">Breweries</router-link>
             <router-link to="/favorites" active-class="nav-link-active" class="nav-link">Favorites</router-link>
             <router-link to="/lists" active-class="nav-link-active" class="nav-link">Lists</router-link>
+            <router-link to="/activity" active-class="nav-link-active" class="nav-link">Community</router-link>
           </div>
 
           <!-- Desktop auth -->
@@ -60,6 +61,7 @@
             <router-link @click="mobileOpen = false" to="/breweries" active-class="nav-link-active" class="nav-link block">Breweries</router-link>
             <router-link @click="mobileOpen = false" to="/favorites" active-class="nav-link-active" class="nav-link block">Favorites</router-link>
             <router-link @click="mobileOpen = false" to="/lists" active-class="nav-link-active" class="nav-link block">Lists</router-link>
+            <router-link @click="mobileOpen = false" to="/activity" active-class="nav-link-active" class="nav-link block">Community</router-link>
             <div class="pt-2 border-t border-gray-100">
               <template v-if="authStore.isLoggedIn">
                 <p class="text-sm text-gray-500 px-3 py-1.5">{{ authStore.currentUser?.username }}</p>
@@ -76,7 +78,8 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-1">
+    <main class="flex-1 mt-4">
+      <AdBanner v-if="!route.meta.guest" />
       <router-view />
     </main>
 
@@ -84,7 +87,7 @@
     <footer v-if="!route.meta.public" class="bg-gray-800 text-white py-8 mt-auto">
       <div class="max-w-6xl mx-auto px-4 text-center">
         <div class="flex items-center justify-center gap-2 mb-2">
-          <img src="/logo.svg" alt="CraftScout" class="w-6 h-6" />
+          <img src="/logo.png" alt="CraftScout" class="w-6 h-6" />
           <span class="text-gray-300 font-semibold">CraftScout</span>
         </div>
         <p class="text-gray-400">&copy; 2026 CraftScout. Discover your perfect beer!</p>
@@ -98,6 +101,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AdBanner from '@/components/AdBanner.vue'
 
 const router = useRouter()
 const route = useRoute()

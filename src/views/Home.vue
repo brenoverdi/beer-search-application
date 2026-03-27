@@ -4,8 +4,8 @@
     <section class="hero-gradient py-20">
       <div class="max-w-4xl mx-auto text-center px-4">
         <div class="flex items-center justify-center gap-3 mb-6">
-          <img src="/logo.svg" alt="CraftScout" class="w-16 h-16" />
-          <h1 class="text-5xl font-bold text-white">CraftScout</h1>
+          <img src="/logo.png" alt="CraftScout" class="w-20 h-20 drop-shadow-lg" />
+          <h1 class="text-5xl font-bold text-white drop-shadow">CraftScout</h1>
         </div>
         <p class="text-xl text-gray-200 mb-8">
           Discover craft beers, explore festivals, and find breweries near you
@@ -60,16 +60,75 @@
                 </div>
               </div>
             </div>
-            <div v-else-if="beerStore.loading" class="text-center py-8">
-              <div class="text-xl">⏳ Loading beers...</div>
+            <div v-else-if="beerStore.loading" class="py-4">
+              <InteractiveLoading />
             </div>
           </div>
         </div>
         
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">🍻 All Popular Beers</h2>
+        <!-- Personalized Recommendations -->
+        <template v-if="authStore.isLoggedIn && recommendedBeers.length > 0">
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">✨</span>
+              <h2 class="text-2xl font-bold text-gray-900">Recommended for You</h2>
+            </div>
+            <router-link to="/search" class="text-amber-600 hover:text-amber-700 text-sm font-medium">Explore more &rarr;</router-link>
+          </div>
+          <p class="text-gray-500 mb-6 -mt-4 text-sm">Based on your favorite styles</p>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div
+              v-for="beer in recommendedBeers"
+              :key="'rec-' + (beer.query || beer.id)"
+              class="bg-white rounded-xl shadow-sm border border-amber-200 hover:shadow-md transition-shadow cursor-pointer flex flex-col relative overflow-hidden"
+              @click="viewBeerDetails(beer)"
+            >
+              <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-amber-600"></div>
+              <!-- Card header band -->
+              <div class="bg-amber-50/50 border-b border-amber-100 px-5 py-4 flex items-center justify-between">
+                <span class="text-3xl">🍺</span>
+                <div class="flex items-center gap-1.5">
+                  <span v-if="beer.abv" class="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+                    {{ Number(beer.abv).toFixed(1) }}% ABV
+                  </span>
+                </div>
+              </div>
+              <!-- Card body -->
+              <div class="p-5 flex flex-col flex-1">
+                <h3 class="font-bold text-gray-900 text-base leading-tight mb-1">
+                  {{ beer.beer_name || beer.name }}
+                </h3>
+                <p class="text-amber-700 text-sm font-medium mb-0.5">
+                  {{ beer.brewery?.brewery_name || beer.brewery || 'Unknown Brewery' }}
+                </p>
+                <p class="text-gray-400 text-xs mb-3">
+                  {{ beer.beer_style || beer.style || 'Unknown Style' }}
+                </p>
+                <div class="flex-1"></div>
+                <!-- Footer -->
+                <div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                  <div v-if="beer.rating_score" class="flex items-center gap-1.5">
+                    <span class="text-amber-400 text-sm">★</span>
+                    <span class="font-semibold text-sm" :class="ratingClass(beer.rating_score)">{{ Number(beer.rating_score).toFixed(2) }}</span>
+                  </div>
+                  <div v-else class="text-xs text-gray-400">No rating</div>
+                  <button
+                    @click.stop="toggleFavorite(beer)"
+                    class="text-red-400 hover:text-red-600 transition-colors text-lg leading-none"
+                  >
+                    {{ beerStore.isFavorite(beer.query || beer.bid || beer.id) ? '♥' : '♡' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
         
-        <div v-if="beerStore.loading" class="text-center">
-          <div class="text-2xl">⏳ Loading beers...</div>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8 mt-16 pt-12 border-t border-gray-100">🍻 All Popular Beers</h2>
+        
+        <div v-if="beerStore.loading" class="py-4">
+          <InteractiveLoading />
         </div>
         
         <div v-else-if="beerStore.error" class="text-center text-red-600">
@@ -137,6 +196,11 @@
         </div>
       </div>
     </section>
+
+    <!-- Monetized Affiliate Section -->
+    <div class="max-w-6xl mx-auto px-4 pb-16">
+      <OnlineShops />
+    </div>
   </div>
 </template>
 
@@ -146,11 +210,15 @@ import { useRouter } from 'vue-router'
 import { useBeerStore } from '@/stores/beer'
 import { useAuthStore } from '@/stores/auth'
 import BeerOfTheDay from '@/components/BeerOfTheDay.vue'
+import OnlineShops from '@/components/OnlineShops.vue'
+import InteractiveLoading from '@/components/InteractiveLoading.vue'
 
 export default {
   name: 'Home',
   components: {
-    BeerOfTheDay
+    BeerOfTheDay,
+    OnlineShops,
+    InteractiveLoading
   },
   setup() {
     const router = useRouter()
@@ -158,6 +226,16 @@ export default {
     const authStore = useAuthStore()
     
     const displayBeers = computed(() => beerStore.popularBeers.slice(0, 12))
+    
+    const recommendedBeers = computed(() => {
+      if (!authStore.isLoggedIn || !authStore.currentUser?.favoriteStyles?.length) return []
+      const styles = authStore.currentUser.favoriteStyles.map(s => s.toLowerCase())
+      return beerStore.popularBeers.filter(b => {
+        if (!b.style && !b.beer_style) return false
+        const bs = (b.style || b.beer_style).toLowerCase()
+        return styles.some(s => bs.includes(s))
+      }).slice(0, 6)
+    })
     
     const loadPopularBeers = async () => {
       try {
@@ -168,6 +246,10 @@ export default {
     }
     
     const toggleFavorite = async (beer) => {
+      if (!authStore.isLoggedIn) {
+        router.push({ name: 'Login' })
+        return
+      }
       try {
         const beerId = beer.bid || beer.id
         if (beerStore.isFavorite(beerId)) {
@@ -198,6 +280,7 @@ export default {
     return {
       router,
       displayBeers,
+      recommendedBeers,
       beerStore,
       authStore,
       loadPopularBeers,

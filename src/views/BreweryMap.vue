@@ -1,7 +1,7 @@
 <!-- eslint-disable no-unused-vars -->
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
+import { Loader } from '@googlemaps/js-api-loader'
 
 const mapElement = ref(null)
 const map = ref(null)
@@ -19,13 +19,11 @@ const searchQuery = ref('brewery')
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
-// Configure Google Maps API options once (outside initMap to avoid multiple calls)
-if (GOOGLE_MAPS_API_KEY) {
-  setOptions({
-    apiKey: GOOGLE_MAPS_API_KEY,
-    version: 'weekly'
-  })
-}
+const loader = new Loader({
+  apiKey: GOOGLE_MAPS_API_KEY || "",
+  version: 'weekly',
+  libraries: ['places']
+})
 
 // Initialize Google Maps
 const initMap = async () => {
@@ -36,10 +34,9 @@ const initMap = async () => {
 
   try {
     // Import required libraries
-    const { Map } = await importLibrary('maps')
-    const { InfoWindow } = await importLibrary('maps')
-    const { PlacesService, PlacesServiceStatus: PSS } = await importLibrary('places')
-    const { Geocoder } = await importLibrary('geocoding')
+    const { Map, InfoWindow } = await loader.importLibrary('maps')
+    const { PlacesService, PlacesServiceStatus: PSS } = await loader.importLibrary('places')
+    const { Geocoder } = await loader.importLibrary('geocoding')
 
     // Store references for use in other functions
     PlacesServiceStatus.value = PSS

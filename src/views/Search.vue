@@ -44,21 +44,24 @@
         />
       </div>
 
-      <!-- Image input -->
+      <!-- Image / Scanner input -->
       <div v-else-if="mode === 'image'" class="mb-6">
         <label
           class="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 cursor-pointer hover:border-amber-400 transition-colors"
           @dragover.prevent
           @drop.prevent="onDrop"
         >
-          <input type="file" accept="image/*" class="hidden" @change="onFileChange" ref="fileInput" />
+          <input type="file" accept="image/*" capture="environment" class="hidden" @change="onFileChange" ref="fileInput" />
           <div v-if="!imageFile" class="text-center">
-            <div class="text-4xl mb-2">📷</div>
-            <p class="text-gray-500 text-sm">Click or drag & drop an image</p>
+            <div class="text-5xl mb-3">📱</div>
+            <p class="font-bold text-gray-700 mb-1">Scan a Beer Label or Barcode</p>
+            <p class="text-gray-500 text-sm">Tap to open your camera, or drag & drop an image</p>
           </div>
-          <div v-else class="text-center">
-            <img :src="imagePreview" class="max-h-40 rounded mb-2 mx-auto" />
-            <p class="text-gray-600 text-sm">{{ imageFile.name }}</p>
+          <div v-else class="text-center border p-2 rounded-lg relative inline-block">
+            <img :src="imagePreview" class="max-h-48 rounded mx-auto object-contain" />
+            <div class="absolute inset-x-0 bottom-0 bg-black/60 text-white text-xs py-1 rounded-b">
+              {{ imageFile.name }}
+            </div>
           </div>
         </label>
         <button
@@ -93,10 +96,22 @@
         <button
           v-if="results.length"
           @click="exportCsv"
-          class="btn-secondary px-5 text-sm"
+          class="btn-secondary px-5 text-sm shrink-0"
         >
           Export CSV
         </button>
+        
+        <div class="ml-auto flex items-center gap-3">
+          <div v-if="!authStore.isPremium" class="px-3 py-1.5 bg-gray-100 rounded-lg text-sm font-medium text-gray-700 flex items-center gap-2">
+            Remaining free searches: 
+            <span :class="authStore.searchesRemaining === 0 ? 'text-red-600 font-bold' : 'text-amber-600 font-bold'">
+              {{ authStore.searchesRemaining }}
+            </span>
+          </div>
+          <router-link v-if="!authStore.isPremium" to="/premium" class="btn-primary px-4 py-1.5 text-sm bg-gradient-to-r from-amber-500 to-amber-600 border-0">
+            ⭐ Upgrade to Premium
+          </router-link>
+        </div>
       </div>
 
       <!-- Error -->
@@ -262,6 +277,13 @@ const canRun = computed(() => {
 
 const run = async () => {
   if (!canRun.value) return
+  
+  // Freemium limit check
+  if (!authStore.isPremium && authStore.searchesRemaining <= 0) {
+    error.value = 'You have reached your 5 free searches limit. Please upgrade to Premium for unlimited searches.'
+    return
+  }
+
   loading.value = true
   error.value   = null
   results.value = []
@@ -283,6 +305,11 @@ const run = async () => {
     }
     results.value = data.results || []
     source.value  = data.source || null
+    
+    // Decrement search limit on success if not premium
+    if (!authStore.isPremium) {
+      authStore.decrementSearch()
+    }
   } catch (err) {
     error.value = err.message || 'Search failed'
   } finally {

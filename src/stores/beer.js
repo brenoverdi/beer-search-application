@@ -104,6 +104,7 @@ export const useBeerStore = defineStore('beer', {
       try {
         await apiService.addFavorite(userId, beer.id)
         this.favorites.push(beer)
+        apiService.postActivity('favorite', beer.id).catch(console.error)
       } catch (error) {
         this.error = error.message
         throw error

@@ -156,6 +156,25 @@ class ApiService {
     return response.json()
   }
 
+  // ── Activity ─────────────────────────────────────────────────────────────
+  
+  async getActivityFeed(limit = 20) {
+    return this.request(`/activity?limit=${limit}`)
+  }
+  
+  async postActivity(action, beerId, review = null, rating = null) {
+    return this.request('/activity', {
+      method: 'POST',
+      body: JSON.stringify({ action, beerId, review, rating })
+    })
+  }
+  
+  // ── Users & Premium ──────────────────────────────────────────────────────
+  
+  async upgradePremium() {
+    return this.request('/users/premium', { method: 'POST' })
+  }
+
   async searchFromUrl(url) {
     return this.request('/beers/search-from-url', {
       method: 'POST',
